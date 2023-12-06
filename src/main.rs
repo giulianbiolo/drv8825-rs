@@ -7,7 +7,7 @@ use drv8825::{DRV8825, Direction};
 // const DRV8825_ENABLE_PIN: u8 = 17; // BCM 17 = Physical 11, Enable Pin
 const DRV8825_STEP_PIN: u8 = 27; // BCM 27 = Physical 13, Step Pin
 const DRV8825_DIR_PIN: u8 = 22; // BCM 22 = Physical 15, Direction Pin
-const MICROSTEPS: u8 = 1;
+const MICROSTEPS: u8 = 32;
 const RADIUS: f64 = 0.05; // 5cm
 const ACCEL: f64 = 0.003; // 0.01 m / (s * step)
 
