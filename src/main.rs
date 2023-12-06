@@ -19,7 +19,7 @@ fn main() -> Result<(), Error> {
     stepper.enable()?;
     stepper.set_direction(Direction::Forward)?;
     
-    stepper.travel_ease_in(&spin_sleep, 2.5, 1.0);
+    stepper.travel_ease_in_out(&spin_sleep, 2.5, 1.0, 0.0);
 
     stepper.disable()?;
     Ok(())
