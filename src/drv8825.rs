@@ -21,11 +21,11 @@ impl DRV8825 {
             let enable: OutputPin = gpio.get(enable_pin)?.into_output();
             let step: OutputPin = gpio.get(step_pin)?.into_output();
             let dir: OutputPin = gpio.get(dir_pin)?.into_output();
-            Ok(DRV8825 { enable: Some(enable), step, dir, microsteps, radius, accel, cur_speed: 0.0 })
+            Ok(DRV8825 { enable: Some(enable), step, dir, microsteps, radius, accel: accel/(microsteps as f64), cur_speed: 0.0 })
         } else {
             let step: OutputPin = gpio.get(step_pin)?.into_output();
             let dir: OutputPin = gpio.get(dir_pin)?.into_output();
-            Ok(DRV8825 { enable: None, step, dir, microsteps, radius, accel, cur_speed: 0.0 })
+            Ok(DRV8825 { enable: None, step, dir, microsteps, radius, accel: accel/(microsteps as f64), cur_speed: 0.0 })
         }
     }
     pub fn enable(&mut self) -> Result<(), Error> {
