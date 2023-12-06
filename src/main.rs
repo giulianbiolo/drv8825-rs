@@ -20,7 +20,7 @@ fn main() -> Result<(), Error> {
     stepper.set_direction(Direction::Forward)?;
     
     // Travel speed is 1.0 m / s -> 3 rev / s, final_speed = 0.0 m / s, distance is 2.5 meters
-    loop{stepper.travel_ease_in_out(&spin_sleep, 2.5, 1.0, 0.0);}
+    loop{stepper.travel_ease_in_out(&spin_sleep, 2.5, 3.0, 0.8);}
 
     stepper.disable()?;
     Ok(())
