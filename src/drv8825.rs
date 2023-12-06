@@ -109,5 +109,6 @@ impl DRV8825 {
             self.step(spin_sleep, self.get_timing());
             println!("2) IDX: {} | Cur Speed: {} | Timing: {} | Distance Travelled: {}", idx, self.cur_speed, self.get_timing(), self.distance_from_steps(idx));
         }
+        self.cur_speed = final_speed;
     }
 }
