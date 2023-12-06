@@ -9,7 +9,7 @@ const DRV8825_STEP_PIN: u8 = 27; // BCM 27 = Physical 13, Step Pin
 const DRV8825_DIR_PIN: u8 = 22; // BCM 22 = Physical 15, Direction Pin
 const MICROSTEPS: u8 = 1;
 const RADIUS: f64 = 0.05;
-const ACCEL: f64 = 0.01;
+const ACCEL: f64 = 0.05;
 
 fn main() -> Result<(), Error> {
     let gpio: Gpio = Gpio::new()?;
@@ -19,7 +19,7 @@ fn main() -> Result<(), Error> {
     stepper.enable()?;
     stepper.set_direction(Direction::Forward)?;
     
-    stepper.travel_ease_in(&spin_sleep, 2.5, 0.1);
+    stepper.travel_ease_in(&spin_sleep, 2.5, 1.0);
 
     stepper.disable()?;
     Ok(())
