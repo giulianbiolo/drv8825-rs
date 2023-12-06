@@ -58,6 +58,11 @@ impl DRV8825 {
         let steps: f64 = (distance / circumference) * (self.microsteps as f64) * 200.0;
         steps as u32
     }
+    fn distance_from_steps(&self, steps: u32) -> f64 {
+        let circumference: f64 = 2.0 * std::f64::consts::PI * self.radius;
+        let distance: f64 = (steps as f64) / (self.microsteps as f64) / 200.0 * circumference;
+        distance
+    }
     // * get_timing() returns the number of nanoseconds to wait between steps for the current speed.
     fn get_timing(&self) -> u64 { (1_000_000_000 / self.steps_from_distance(self.cur_speed).clamp(10, u32::MAX)) as u64 }
 
@@ -71,7 +76,7 @@ impl DRV8825 {
                 self.cur_speed += self.accel * accel_decel;
             }
             self.step(spin_sleep, self.get_timing());
-            println!("IDX: {} | Cur Speed: {} | Timing: {}", idx, self.cur_speed, self.get_timing());
+            println!("IDX: {} | Cur Speed: {} | Timing: {} | Distance Travelled: {}", idx, self.cur_speed, self.get_timing(), self.distance_from_steps(idx));
         }
     }
     pub fn travel_ease_in_out(&mut self, spin_sleep: &SpinSleeper, distance: f64, travel_speed: f64, final_speed: f64) {
