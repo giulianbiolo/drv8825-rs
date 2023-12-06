@@ -83,6 +83,7 @@ impl DRV8825 {
         // we want to spool up or down the motors from cur_speed to target_speed, reaching target_speed at min time (max accel) and at the end must come to a stop at min time (-max accel)
         let accel_decel: f64 = (travel_speed - self.cur_speed).signum() as f64; // 1 for accel, -1 for decel
         let steps: u32 = self.steps_from_distance(distance);
+        println!("Steps: {}", self.steps_from_distance(distance));
         let mut reached_idx: u32 = steps;
         for idx in 0..steps {
             // compute if we need to start decelerating
@@ -90,6 +91,7 @@ impl DRV8825 {
                 self.cur_speed += self.accel * accel_decel;
             }
             self.step(spin_sleep, self.get_timing());
+            println!("1) IDX: {} | Cur Speed: {} | Timing: {} | Distance Travelled: {}", idx, self.cur_speed, self.get_timing(), self.distance_from_steps(idx));
             let steps_to_final_speed: u32 = ((self.cur_speed - final_speed).abs() / self.accel) as u32;
             if steps_to_final_speed >= steps - idx {
                 reached_idx = idx;
@@ -98,12 +100,14 @@ impl DRV8825 {
             // delta speed / acceleration == step to final speed
             // if step to stop < step remaining in for loop (self.steps_from_distance(distance) - i) then we need to start decelerating
         }
+        println!("Remaining Steps: {}", steps - reached_idx);
         let accel_decel: f64 = (final_speed - self.cur_speed).signum() as f64; // 1 for accel, -1 for decel
-        for _ in reached_idx..steps {
+        for idx in reached_idx..steps {
             if (accel_decel > 0.0 && self.cur_speed < final_speed) || (accel_decel < 0.0 && self.cur_speed > final_speed) {
                 self.cur_speed += self.accel * accel_decel;
             }
             self.step(spin_sleep, self.get_timing());
+            println!("2) IDX: {} | Cur Speed: {} | Timing: {} | Distance Travelled: {}", idx, self.cur_speed, self.get_timing(), self.distance_from_steps(idx));
         }
     }
 }
