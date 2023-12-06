@@ -55,7 +55,7 @@ impl DRV8825 {
     // * steps_from_distance(distance) returns the number of steps required to move the given distance.
     fn steps_from_distance(&self, distance: f64) -> u32 {
         let circumference: f64 = 2.0 * std::f64::consts::PI * self.radius;
-        let steps: f64 = (distance / circumference) * (self.microsteps as f64);
+        let steps: f64 = (distance / circumference) * (self.microsteps as f64) * 200.0;
         steps as u32
     }
     // * get_timing() returns the number of nanoseconds to wait between steps for the current speed.
