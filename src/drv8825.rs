@@ -66,12 +66,12 @@ impl DRV8825 {
         // we want to spool up or down the motors from cur_speed to target_speed, reaching target_speed at min time (max accel) and at the end of the travel keep target_speed
         let accel_decel: f64 = (travel_speed - self.cur_speed).signum() as f64; // 1 for accel, -1 for decel
         println!("Steps: {}", self.steps_from_distance(distance));
-        for _ in 0..self.steps_from_distance(distance) {
+        for idx in 0..self.steps_from_distance(distance) {
             if (accel_decel > 0.0 && self.cur_speed < travel_speed) || (accel_decel < 0.0 && self.cur_speed > travel_speed) {
                 self.cur_speed += self.accel * accel_decel;
             }
             self.step(spin_sleep, self.get_timing());
-            println!("Cur Speed: {} | Timing: {}", self.cur_speed, self.get_timing());
+            println!("IDX: {} | Cur Speed: {} | Timing: {}", idx, self.cur_speed, self.get_timing());
         }
     }
     pub fn travel_ease_in_out(&mut self, spin_sleep: &SpinSleeper, distance: f64, travel_speed: f64, final_speed: f64) {
