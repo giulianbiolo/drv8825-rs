@@ -54,7 +54,7 @@ impl DRV8825 {
         for _ in 0..n { self.step(spin_sleep, ONE_MILLIS.as_nanos() as u64); }
     }
     pub fn step_n_timed(&mut self, spin_sleep: &SpinSleeper, n: u32, total_time: f64) {
-        let timing_ns: u64 = (total_time / (n as f64)) as u64;
+        let timing_ns: u64 = ((total_time / (n as f64)) * 1_000_000_000_f64) as u64;
         for _ in 0..n { self.step(spin_sleep, timing_ns); }
     }
     // * steps_from_distance(distance) returns the number of steps required to move the given distance.
@@ -122,6 +122,7 @@ impl DRV8825 {
         let tot_time = time[time.len() - 1];
         let mut times = vec![0.0_f64, 0.01_f64];
         times.extend(time);
+        println!("Times: {:?}", times);
         let mut distances = vec![vec![0.0_f64, 0.0_f64], vec![self.cur_speed * 0.01_f64, 0.0_f64]];
         distances.extend(dists);
         let spline = CubicSpline::new(times, distances).unwrap();
