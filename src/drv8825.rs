@@ -117,29 +117,41 @@ impl DRV8825 {
         self.cur_speed = final_speed;
     }
 
-    pub fn travel(&mut self, spin_sleep: &SpinSleeper, distance: Vec<f64>, time: Vec<f64>) {
-        let dists = distance.iter().map(|d| vec![*d, 0.0_f64]).collect::<Vec<Vec<f64>>>();
-        let tot_time = time[time.len() - 1];
-        let mut times = vec![0.0_f64, 0.01_f64];
+    /// This method moves the motors in a smooth fashion.
+    /// - distance is a vector of distances to travel, in meters
+    /// - time is a vector of times to travel, in seconds [ This method works only for timesteps of at least 0.01 seconds ]
+    /// - tohalt is a boolean that tells the motor to come to a stop at the end of the travel
+    /// --------------------------------
+    /// The method works by creating a cubic spline with the given distance and time vectors, then sampling the spline every 0.01 seconds.
+    /// This method will automatically take care of making the movement feel seamless even if previous speed is not zero.
+    pub fn travel(&mut self, spin_sleep: &SpinSleeper, distance: Vec<f64>, time: Vec<f64>, tohalt: bool) {
+        let tot_time: f64 = time[time.len() - 1];
+        let tot_dist: f64 = distance[distance.len() - 1];
+        assert!(tot_time >= 0.01_f64, "Time must be at least 0.01 seconds long");
+        let input_dists: Vec<Vec<f64>> = distance
+            .iter()
+            .map(|d| vec![*d, 0.0_f64])
+            .collect::<Vec<Vec<f64>>>();
+        let mut times: Vec<f64> = vec![0.0_f64, 0.01_f64];
         times.extend(time);
-        println!("Times: {:?}", times);
-        let mut distances = vec![vec![0.0_f64, 0.0_f64], vec![self.cur_speed * 0.01_f64, 0.0_f64]];
-        distances.extend(dists);
-        let spline = CubicSpline::new(times, distances).unwrap();
-        // sample time * 100 times, each sample is 0.01 seconds long
-        let mut positions = Vec::new();
-        for t in 1..(tot_time * 100.0_f64) as usize {
-            let t = t as f64 * 0.01_f64;
-            let p = spline.position(t).unwrap();
-            // let v = spline.velocity(t).unwrap();
-            // let a = spline.acceleration(t).unwrap();
-            positions.push(p[0]);
+        let mut distances: Vec<Vec<f64>> = vec![vec![0.0_f64, 0.0_f64], vec![self.cur_speed * 0.01_f64, 0.0_f64]];
+        distances.extend(input_dists);
+        if tohalt {
+            times.pop();
+            times.push(tot_time * 0.9_f64);
+            times.push(tot_time);
+            distances.pop();
+            distances.push(vec![tot_dist, 0.0_f64]);
+            distances.push(vec![tot_dist, 0.0_f64]);
         }
-        // now we move the motor, sample 0.01 seconds at a time and move the motor of the distance between p and p-1
-        for idx in 1..positions.len() {
-            let distance = positions[idx] - positions[idx - 1];
-            let steps = self.steps_from_distance(distance);
-            self.step_n_timed(spin_sleep, steps, 0.01_f64);
+        if let Some(spline) = CubicSpline::new(times, distances) {
+            // sample time * 100 times, each sample is 0.01 seconds long
+            let positions: Vec<f64> = (1..((tot_time * 100.0_f64) as usize))
+                .into_iter()
+                .map(|t| spline.position(t as f64 * 0.01_f64).unwrap()[0])
+                .collect::<Vec<f64>>();
+            // now we move the motor, sample 0.01 seconds at a time and move the motor of the distance between p and p-1
+            for idx in 1..positions.len() { self.step_n_timed(spin_sleep, self.steps_from_distance(positions[idx] - positions[idx - 1]), 0.01_f64); }
         }
     }
 }
