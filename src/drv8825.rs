@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use rppal::gpio::{Gpio, Error, OutputPin};
 use spin_sleep::SpinSleeper;
+use trajectory::{CubicSpline, Trajectory};
 
 const ONE_MILLIS: std::time::Duration = std::time::Duration::from_millis(1);
 
@@ -51,6 +52,10 @@ impl DRV8825 {
     }
     pub fn step_n(&mut self, spin_sleep: &SpinSleeper, n: u32) {
         for _ in 0..n { self.step(spin_sleep, ONE_MILLIS.as_nanos() as u64); }
+    }
+    pub fn step_n_timed(&mut self, spin_sleep: &SpinSleeper, n: u32, total_time: f64) {
+        let timing_ns: u64 = (total_time / (n as f64)) as u64;
+        for _ in 0..n { self.step(spin_sleep, timing_ns); }
     }
     // * steps_from_distance(distance) returns the number of steps required to move the given distance.
     fn steps_from_distance(&self, distance: f64) -> u32 {
@@ -110,5 +115,30 @@ impl DRV8825 {
             //println!("2) IDX: {} | Cur Speed: {} | Timing: {} | Distance Travelled: {}", idx, self.cur_speed, self.get_timing(), self.distance_from_steps(idx));
         }
         self.cur_speed = final_speed;
+    }
+
+    pub fn travel(&mut self, spin_sleep: &SpinSleeper, distance: Vec<f64>, time: Vec<f64>) {
+        let dists = distance.iter().map(|d| vec![*d, 0.0_f64]).collect::<Vec<Vec<f64>>>();
+        let tot_time = time[time.len() - 1];
+        let mut times = vec![0.0_f64, 0.01_f64];
+        times.extend(time);
+        let mut distances = vec![vec![0.0_f64, 0.0_f64], vec![self.cur_speed * 0.01_f64, 0.0_f64]];
+        distances.extend(dists);
+        let spline = CubicSpline::new(times, distances).unwrap();
+        // sample time * 100 times, each sample is 0.01 seconds long
+        let mut positions = Vec::new();
+        for t in 1..(tot_time * 100.0_f64) as usize {
+            let t = t as f64 * 0.01_f64;
+            let p = spline.position(t).unwrap();
+            // let v = spline.velocity(t).unwrap();
+            // let a = spline.acceleration(t).unwrap();
+            positions.push(p[0]);
+        }
+        // now we move the motor, sample 0.01 seconds at a time and move the motor of the distance between p and p-1
+        for idx in 1..positions.len() {
+            let distance = positions[idx] - positions[idx - 1];
+            let steps = self.steps_from_distance(distance);
+            self.step_n_timed(spin_sleep, steps, 0.01_f64);
+        }
     }
 }
